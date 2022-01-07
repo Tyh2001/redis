@@ -4,4 +4,4 @@
 
 用作 egg-weib 项目
 
-项目地址：https://gitee.com/tyh666999/egg.weibo
+项目地址：https://github.com/Tyh2001/egg-weibo
