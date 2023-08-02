@@ -12,6 +12,206 @@ SECURITY: There are security fixes in the release.
 --------------------------------------------------------------------------------
 
 ================================================================================
+Redis 5.0.14 Released Mon Oct 4 12:00:00 IDT 2021
+================================================================================
+
+Upgrade urgency: SECURITY, contains fixes to security issues.
+
+Security Fixes:
+* (CVE-2021-41099) Integer to heap buffer overflow handling certain string
+  commands and network payloads, when proto-max-bulk-len is manually configured
+  to a non-default, very large value [reported by yiyuaner].
+* (CVE-2021-32762) Integer to heap buffer overflow issue in redis-cli and
+  redis-sentinel parsing large multi-bulk replies on some older and less common
+  platforms [reported by Microsoft Vulnerability Research].
+* (CVE-2021-32687) Integer to heap buffer overflow with intsets, when
+  set-max-intset-entries is manually configured to a non-default, very large
+  value [reported by Pawel Wieczorkiewicz, AWS].
+* (CVE-2021-32675) Denial Of Service when processing RESP request payloads with
+  a large number of elements on many connections.
+* (CVE-2021-32672) Random heap reading issue with Lua Debugger [reported by
+  Meir Shpilraien].
+* (CVE-2021-32628) Integer to heap buffer overflow handling ziplist-encoded
+  data types, when configuring a large, non-default value for
+  hash-max-ziplist-entries, hash-max-ziplist-value, zset-max-ziplist-entries
+  or zset-max-ziplist-value [reported by sundb].
+* (CVE-2021-32627) Integer to heap buffer overflow issue with streams, when
+  configuring a non-default, large value for proto-max-bulk-len and
+  client-query-buffer-limit [reported by sundb].
+* (CVE-2021-32626) Specially crafted Lua scripts may result with Heap buffer
+  overflow [reported by Meir Shpilraien].
+
+================================================================================
+Redis 5.0.13 Released Wed Jul 21 16:32:19 IDT 2021
+================================================================================
+
+Upgrade urgency: SECURITY, contains fixes to security issues that affect
+authenticated client connections on 32-bit versions. MODERATE otherwise.
+
+Fix integer overflow in BITFIELD on 32-bit versions (CVE-2021-32761).
+An integer overflow bug in Redis version 2.2 or newer can be exploited using the
+BITFIELD command to corrupt the heap and potentially result with remote code
+execution.
+
+Bug fixes:
+* Fix overflows on 32-bit versions in GETBIT, SETBIT, BITCOUNT, BITPOS, and BITFIELD (#9191)
+* Fix ziplist length updates on big-endian platforms (#2080)
+
+================================================================================
+Redis 5.0.12     Released Mon Mar  1 17:29:52 IST 2021
+================================================================================
+
+Upgrade urgency: LOW, fixes a compilation issue.
+
+Bug fixes:
+* Fix compilation error on non-glibc systems if jemalloc is not used (#8533)
+
+================================================================================
+Redis 5.0.11     Released Mon Feb 22 16:48:25 IST 2021
+================================================================================
+
+Upgrade urgency: SECURITY if you use 32bit build of redis (see bellow), LOW
+otherwise.
+
+Integer overflow on 32-bit systems (CVE-2021-21309):
+Redis 4.0 or newer uses a configurable limit for the maximum supported bulk
+input size. By default, it is 512MB which is a safe value for all platforms.
+If the limit is significantly increased, receiving a large request from a client
+may trigger several integer overflow scenarios, which would result with buffer
+overflow and heap corruption.
+
+Bug fixes:
+* Avoid 32-bit overflows when proto-max-bulk-len is set high (#8522)
+* Fix an issue where a forked process deletes the parent's pidfile (#8231)
+* Fix flock cluster config may cause failure to restart after kill -9 (#7674)
+* Avoid an out-of-bounds read in the redis-sentinel (#7443)
+
+Platform and deployment-related changes:
+* Fix setproctitle related crashes. (#8150, #8088)
+  Caused various crashes on startup, mainly on Apple M1 chips or under
+  instrumentation.
+* Add a check for an ARM64 Linux kernel bug (#8224)
+  Due to the potential severity of this issue, Redis will refuse to run on
+  affected platforms by default.
+
+Modules:
+* RM_ZsetRem: Delete key if empty, the bug could leave empty zset keys (#8453)
+
+================================================================================
+Redis 5.0.10     Released Mon Oct 26 09:21:49 IST 2020
+================================================================================
+
+Upgrade urgency: SECURITY if you use an affected platform (see below).
+                 Otherwise the upgrade urgency is MODERATE.
+
+This release fixes a potential heap overflow when using a heap allocator other
+than jemalloc or glibc's malloc. See:
+https://github.com/redis/redis/pull/7963
+
+Other fixes in this release:
+
+* Avoid case of Lua scripts being consistently aborted due to OOM
+* XPENDING will not update consumer's seen-time
+* A blocked XREADGROUP didn't propagated the XSETID to replicas / AOF
+* UNLINK support for streams
+* RESTORE ABSTTL won't store expired keys into the DB
+* Hide AUTH from MONITOR
+* Cluster: reduce spurious PFAIL/FAIL states upon delayed PONG receival
+* Cluster: Fix case of clusters mixing accidentally by gossip
+* Cluster: Allow blocked XREAD on a cluster replica
+* Cluster: Optimize memory usage CLUSTER SLOTS command
+* RedisModule_ValueLength support for stream data type
+* Minor fixes in redis-check-rdb and redis-cli
+* Fix redis-check-rdb support for modules aux data
+* Add fsync in replica when full RDB payload was received
+
+Full list of commits:
+
+Yossi Gottlieb in commit ce0d74d8f:
+ Fix wrong zmalloc_size() assumption. (#7963)
+ 1 file changed, 3 deletions(-)
+
+Yossi Gottlieb in commit 066699240:
+ Backport Lua 5.2.2 stack overflow fix. (#7733)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+WuYunlong in commit 8a90c7ef3:
+ Add fsync to readSyncBulkPayload(). (#7839)
+ 1 file changed, 11 insertions(+)
+
+Ariel Shtul in commit f0df2bb3c:
+ Fix redis-check-rdb support for modules aux data (#7826)
+ 3 files changed, 21 insertions(+), 1 deletion(-)
+
+hwware in commit 7add2a412:
+ fix memory leak in sentinel connection sharing
+ 1 file changed, 1 insertion(+)
+
+Oran Agra in commit 315e648f8:
+ Allow blocked XREAD on a cluster replica (#7881)
+ 3 files changed, 100 insertions(+), 2 deletions(-)
+
+guybe7 in commit 4967ee94e:
+ Modules: Invalidate saved_oparray after use (#7688)
+ 1 file changed, 2 insertions(+)
+
+antirez in commit 065003e8f:
+ Modules: remove spurious call from moduleHandleBlockedClients().
+ 1 file changed, 1 deletion(-)
+
+Angus Pearson in commit 6cdf62928:
+ Fix broken interval and repeat bahaviour in redis-cli (incluing cluster mode)
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+antirez in commit cb6a4971c:
+ Cluster: introduce data_received field.
+ 2 files changed, 27 insertions(+), 10 deletions(-)
+
+Madelyn Olson in commit 83f4de865:
+ Hide AUTH from monitor
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Guy Benoish in commit 3ba08d185:
+ Support streams in general module API functions
+ 3 files changed, 11 insertions(+), 1 deletion(-)
+
+Itamar Haber in commit 109c0635c:
+ Expands lazyfree's effort estimate to include Streams (#5794)
+ 1 file changed, 24 insertions(+)
+
+huangzhw in commit 235210d5b:
+ defrag.c activeDefragSdsListAndDict when defrag sdsele, We can't use (#7492)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Oran Agra in commit fdd3162fe:
+ RESTORE ABSTTL skip expired keys - leak (#7511)
+ 1 file changed, 1 insertion(+)
+
+Oran Agra in commit 6139d6d18:
+ RESTORE ABSTTL won't store expired keys into the db (#7472)
+ 4 files changed, 45 insertions(+), 15 deletions(-)
+
+Liu Zhen in commit 0f502c58d:
+ fix clusters mixing accidentally by gossip
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+Guy Benoish in commit 37fd50718:
+ XPENDING should not update consumer's seen-time
+ 4 files changed, 30 insertions(+), 18 deletions(-)
+
+antirez in commit a3ca53e4a:
+ Also use propagate() in streamPropagateGroupID().
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+yanhui13 in commit 7a62eb96e:
+ optimize the output of cluster slots
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+srzhao in commit 0efb93d0c:
+ Check OOM at script start to get stable lua OOM state.
+ 3 files changed, 11 insertions(+), 4 deletions(-)
+
+================================================================================
 Redis 5.0.9     Released Thu Apr 17 12:41:00 CET 2020
 ================================================================================
 
